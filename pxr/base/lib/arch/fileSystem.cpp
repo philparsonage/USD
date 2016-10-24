@@ -163,36 +163,6 @@ ArchGetModificationTime(const struct stat& st)
 #endif
 }
 
-double
-ArchGetAccessTime(const struct stat& st)
-{
-#if defined(ARCH_OS_LINUX)
-    return st.st_atim.tv_sec + 1e-9*st.st_atim.tv_nsec;
-#elif defined(ARCH_OS_DARWIN)
-    return st.st_atimespec.tv_sec + 1e-9*st.st_atimespec.tv_nsec;
-#elif defined(ARCH_OS_WINDOWS)
-	// NB: this may need adjusting
-	return static_cast<double>(st.st_atime);
-#else
-#error Unknown system architecture
-#endif
-}
-
-double
-ArchGetStatusChangeTime(const struct stat& st)
-{
-#if defined(ARCH_OS_LINUX)
-    return st.st_ctim.tv_sec + 1e-9*st.st_ctim.tv_nsec;
-#elif defined(ARCH_OS_DARWIN)
-    return st.st_ctimespec.tv_sec + 1e-9*st.st_ctimespec.tv_nsec;
-#elif defined(ARCH_OS_WINDOWS)
-	// NB: this may need adjusting
-	return static_cast<double>(st.st_mtime);
-#else
-#error Unknown system architecture
-#endif
-}
-
 namespace {
     struct _Fcloser {
         inline void operator()(FILE *f) const { if (f) { fclose(f); } }
@@ -404,50 +374,6 @@ ArchGetTmpDir()
     return _TmpDir;
 }
 
-set<string>
-ArchGetAutomountDirectories()
-{
-    set<string> result;
-
-#if !defined(ARCH_OS_LINUX)
-    ARCH_ERROR("unimplemented function");
-#else
-    if (FILE *in = fopen("/proc/mounts","r")) {
-	char linebuffer[1024];
-	
-	while (fgets(linebuffer, 1024, in)) {
-	    char name[1024], dir[1024], type[1024], opts[1024];
-        if (sscanf(linebuffer, "%s %s %s %s", name, dir, type, opts) == 4 &&
-            strcmp(type, "autofs") == 0) {
-
-            // Omit mounts with the 'direct' option set.
-            bool direct = false;
-
-            char* saveptr;
-            char* token = strtok_r(opts, ",", &saveptr);
-            while (token) {
-                if (strcmp(token, "direct") == 0) {
-                    direct = true;
-                    break;
-                }
-                token = strtok_r(NULL, ",", &saveptr);
-            }
-
-            if (not direct)
-                result.insert(dir);
-	    }
-	}
-
-	fclose(in);
-    }
-    else {
-        ARCH_ERROR("Cannot open /proc/mounts");
-    }
-#endif
-    
-    return result;
-}
-
 
 void
 Arch_Unmapper::operator()(char const *mapStart) const
@@ -514,6 +440,19 @@ ArchMutableFileMapping
 ArchMapFileReadWrite(FILE *file)
 {
     return Arch_MapFileImpl<ArchMutableFileMapping>(file);
+}
+
+ARCH_API
+void ArchMemAdvise(void const *addr, size_t len, ArchMemAdvice adv)
+{
+#if defined(ARCH_OS_WINDOWS)
+    // No windows implementation yet.  Look at
+    // PrefetchVirtualMemory()/OfferVirtualMemory() in future.
+#else // assume POSIX
+    posix_madvise(const_cast<void *>(addr), len,
+                  adv == ArchMemAdviceWillNeed ?
+                  POSIX_MADV_WILLNEED : POSIX_MADV_DONTNEED);
+#endif
 }
 
 int64_t
@@ -628,154 +567,17 @@ ArchPWrite(FILE *file, void const *bytes, size_t count, int64_t offset)
 #endif
 }
 
+ARCH_API
+void ArchFileAdvise(
+    FILE *file, int64_t offset, size_t count, ArchFileAdvice adv)
+{
 #if defined(ARCH_OS_WINDOWS)
-
-static inline DWORD ArchModeToAcess(int mode)
-{
-    switch (mode)
-    {
-    case F_OK:	return FILE_GENERIC_EXECUTE;
-    case W_OK:	return FILE_GENERIC_WRITE;
-    case R_OK:	return FILE_GENERIC_READ;
-    default:	return FILE_ALL_ACCESS;
-    }
-}
-
-int ArchFileAccess(const char* path, int mode)
-{
-    SECURITY_INFORMATION securityInfo = OWNER_SECURITY_INFORMATION |
-                                        GROUP_SECURITY_INFORMATION |
-                                        DACL_SECURITY_INFORMATION;
-    bool result = false;
-    DWORD length = 0;
-
-    if (!GetFileSecurity(path, securityInfo, NULL, NULL, &length))
-    {
-        std::unique_ptr<unsigned char[]> buffer(new unsigned char[length]);
-        PSECURITY_DESCRIPTOR security = (PSECURITY_DESCRIPTOR)buffer.get();
-        if (GetFileSecurity(path, securityInfo, security, length, &length))
-        {
-            HANDLE token;
-            DWORD desiredAccess = TOKEN_IMPERSONATE | TOKEN_QUERY |
-                                  TOKEN_DUPLICATE | STANDARD_RIGHTS_READ;
-            if (!OpenThreadToken(GetCurrentThread(), desiredAccess, TRUE, &token))
-            {
-                if (!OpenProcessToken(GetCurrentProcess(), desiredAccess, &token))
-                {
-                    CloseHandle(token);
-                    return -1;
-                }
-            }
-
-            HANDLE duplicateToken;
-            if (DuplicateToken(token, SecurityImpersonation, &duplicateToken))
-            {
-                PRIVILEGE_SET privileges = {0};
-                DWORD grantedAccess = 0;
-                DWORD privilegesLength = sizeof(privileges);
-                BOOL accessStatus = FALSE;
-
-                GENERIC_MAPPING mapping;
-                mapping.GenericRead = FILE_GENERIC_READ;
-                mapping.GenericWrite = FILE_GENERIC_WRITE;
-                mapping.GenericExecute = FILE_GENERIC_EXECUTE;
-                mapping.GenericAll = FILE_ALL_ACCESS;
-
-                DWORD accessMask = ArchModeToAcess(mode);
-                MapGenericMask(&accessMask, &mapping);
-
-                if (AccessCheck(security,
-                                duplicateToken,
-                                accessMask,
-                                &mapping,
-                                &privileges,
-                                &privilegesLength,
-                                &grantedAccess,
-                                &accessStatus))
-                {
-                    result = (accessStatus == TRUE);
-                }
-                CloseHandle(duplicateToken);
-            }
-            CloseHandle(token);
-        }
-    }
-    return result ? 0 : -1;
-}
-
-// https://msdn.microsoft.com/en-us/library/windows/hardware/ff552012.aspx
-
-#define MAX_REPARSE_DATA_SIZE  (16 * 1024)
-
-typedef struct _REPARSE_DATA_BUFFER {
-    ULONG   ReparseTag;
-    USHORT  ReparseDataLength;
-    USHORT  Reserved;
-    union {
-        struct {
-            USHORT  SubstituteNameOffset;
-            USHORT  SubstituteNameLength;
-            USHORT  PrintNameOffset;
-            USHORT  PrintNameLength;
-            ULONG   Flags;
-            WCHAR   PathBuffer[1];
-        } SymbolicLinkReparseBuffer;
-        struct {
-            USHORT  SubstituteNameOffset;
-            USHORT  SubstituteNameLength;
-            USHORT  PrintNameOffset;
-            USHORT  PrintNameLength;
-            WCHAR   PathBuffer[1];
-        } MountPointReparseBuffer;
-        struct {
-            UCHAR  DataBuffer[1];
-        } GenericReparseBuffer;
-    };
-} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
-
-std::string ArchResolveSymlink(const char* path)
-{
-    HANDLE handle = ::CreateFile(path, GENERIC_READ, 0, NULL, OPEN_EXISTING,
-        FILE_FLAG_OPEN_REPARSE_POINT |
-        FILE_FLAG_BACKUP_SEMANTICS, NULL);
-
-    if (handle == INVALID_HANDLE_VALUE)
-        return std::string(path);
-
-    std::unique_ptr<unsigned char[]> buffer(new
-                               unsigned char[MAX_REPARSE_DATA_SIZE]);
-    REPARSE_DATA_BUFFER* reparse = (REPARSE_DATA_BUFFER*)buffer.get();
-
-    if (!DeviceIoControl(handle, FSCTL_GET_REPARSE_POINT, NULL, 0, reparse,
-                         MAX_REPARSE_DATA_SIZE, NULL, NULL))
-    {
-        CloseHandle(handle);
-        return std::string(path);
-    }
-    CloseHandle(handle);
-
-    if (IsReparseTagMicrosoft(reparse->ReparseTag))
-    {
-        if (reparse->ReparseTag == IO_REPARSE_TAG_SYMLINK)
-        {
-            size_t length = reparse->SymbolicLinkReparseBuffer.PrintNameLength
-                            / sizeof(WCHAR);
-            std::unique_ptr<WCHAR> reparsePath(new WCHAR[length + 1]);
-            wcsncpy_s(reparsePath.get(), length + 1,
-              &reparse->SymbolicLinkReparseBuffer.PathBuffer[
-              reparse->SymbolicLinkReparseBuffer.PrintNameOffset / sizeof(WCHAR)
-              ], length);
-
-            reparsePath.get()[length] = 0;
-
-            // Convert wide-char to narrow char
-            std::wstring ws(reparsePath.get());
-            string str(ws.begin(), ws.end());
-
-            return str;
-        }
-    }
-
-    return std::string(path);
-}
+    // No windows implementation yet.  Not clear what's equivalent.
+#elif defined(ARCH_OS_DARWIN)
+    // No OSX implementation; posix_fadvise does not exist on that platform.
+#else // assume POSIX
+    posix_fadvise(fileno(file), offset, static_cast<off_t>(count),
+                  adv == ArchFileAdviceWillNeed ?
+                  POSIX_FADV_WILLNEED : POSIX_FADV_DONTNEED);
 #endif
+}

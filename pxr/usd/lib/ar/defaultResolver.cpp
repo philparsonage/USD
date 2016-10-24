@@ -34,33 +34,22 @@
 #include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/vt/value.h"
 
-#if MAYA_TBB_HANG_WORKAROUND_HACK
-#include <unordered_map>
-#include <tbb/spin_mutex.h>
-#else
 #include <tbb/concurrent_hash_map.h>
-#endif // MAYA_TBB_HANG_WORKAROUND_HACK
 
 #include <boost/foreach.hpp>
 
-static const char* _FileRelativePathPrefix = "./";
+static bool
+_IsFileRelative(const std::string& path) {
+    return path.find("./") == 0 or path.find("../") == 0;
+}
 
-#if MAYA_TBB_HANG_WORKAROUND_HACK
-struct Ar_DefaultResolver::_Cache
-{
-    using _PathToResolvedPathMap = 
-        std::unordered_map<std::string, std::string>;
-    _PathToResolvedPathMap _pathToResolvedPathMap;
-    tbb::spin_mutex _mutex;
-};
-#else
+
 struct Ar_DefaultResolver::_Cache
 {
     using _PathToResolvedPathMap = 
         tbb::concurrent_hash_map<std::string, std::string>;
     _PathToResolvedPathMap _pathToResolvedPathMap;
 };
-#endif // MAYA_TBB_HANG_WORKAROUND_HACK
 
 Ar_DefaultResolver::Ar_DefaultResolver()
 {
@@ -101,13 +90,9 @@ Ar_DefaultResolver::AnchorRelativePath(
     const std::string& anchorPath, 
     const std::string& path)
 {
-    if (path.empty() or not IsRelativePath(path)) {
+    if (anchorPath.empty() or anchorPath[0] != '/' or
+        path.empty() or path[0] == '/' or not _IsFileRelative(path))
         return path;
-    }
-
-    if (anchorPath.empty() or IsRelativePath(anchorPath)) {
-        return path;
-    }
 
     // Ensure we are using forward slashes and not back slashes.
     std::string forwardPath = anchorPath;
@@ -116,7 +101,7 @@ Ar_DefaultResolver::AnchorRelativePath(
     // If anchorPath does not end with a '/', we assume it is specifying
     // a file, strip off the last component, and anchor the path to that
     // directory.
-    std::string anchoredPath = TfStringCatPaths(
+    const std::string anchoredPath = TfStringCatPaths(
         TfStringGetBeforeSuffix(forwardPath, '/'), path);
     anchoredPath = TfNormPath(anchoredPath);
     anchoredPath = TfAbsPath(anchoredPath);
@@ -126,8 +111,7 @@ Ar_DefaultResolver::AnchorRelativePath(
 bool
 Ar_DefaultResolver::IsSearchPath(const std::string& path)
 {
-    return IsRelativePath(path)
-        and not TfStringStartsWith(path, _FileRelativePathPrefix);
+    return IsRelativePath(path) and not _IsFileRelative(path);
 }
 
 std::string
@@ -215,18 +199,6 @@ Ar_DefaultResolver::ResolveWithAssetInfo(
         return path;
     }
 
-#if MAYA_TBB_HANG_WORKAROUND_HACK
-    if (_CachePtr currentCache = _GetCurrentCache()) {
-        tbb::spin_mutex::scoped_lock lock(currentCache->_mutex);
-        std::pair<_Cache::_PathToResolvedPathMap::iterator, bool> accessor =
-            currentCache->_pathToResolvedPathMap.insert(
-                std::make_pair(path, std::string()));
-        if (accessor.second) {
-            accessor.first->second = _ResolveNoCache(path);
-        }
-        return accessor.first->second;
-    }
-#else
     if (_CachePtr currentCache = _GetCurrentCache()) {
         _Cache::_PathToResolvedPathMap::accessor accessor;
         if (currentCache->_pathToResolvedPathMap.insert(
@@ -235,7 +207,6 @@ Ar_DefaultResolver::ResolveWithAssetInfo(
         }
         return accessor->second;
     }
-#endif // MAYA_TBB_HANG_WORKAROUND_HACK    
 
     return _ResolveNoCache(path);
 }

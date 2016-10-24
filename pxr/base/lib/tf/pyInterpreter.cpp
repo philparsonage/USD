@@ -31,6 +31,7 @@
 #include "pxr/base/arch/fileSystem.h"
 #include "pxr/base/arch/symbols.h"
 #include "pxr/base/arch/systemInfo.h"
+#include "pxr/base/arch/threads.h"
 
 #include <atomic>
 #include <mutex>
@@ -67,7 +68,14 @@ TfPyInitialize()
     std::lock_guard<std::recursive_mutex> lock(mutex);
 
     if (!Py_IsInitialized()) {
-        static std::string programName(ArchGetExecutablePath());
+
+        if (not ArchIsMainThread() and not PyEval_ThreadsInitialized()) {
+            // Python claims that PyEval_InitThreads "should be called in the
+            // main thread before creating a second thread or engaging in any
+            // other thread operations."  So we'll issue a warning here.
+            TF_WARN("Calling PyEval_InitThreads() for the first time outside "
+                    "the 'main thread'.  Python doc says not to do this.");
+        }
 
         // Initialize Python threading.  This grabs the GIL.  We'll release it
         // at the end of this function.

@@ -37,6 +37,8 @@
 #include "pxr/base/tf/hashset.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
+#include <tbb/spin_rw_mutex.h>
+#include <functional>
 #include <map>
 
 SDF_DECLARE_HANDLES(SdfLayer);
@@ -136,18 +138,6 @@ public:
     /// local opinions about name children.
     /// \see PcpInstanceKey
 	PCP_API bool IsInstanceable() const;
-
-    /// Get the set of asset paths used by direct arcs in this prim.
-    /// This set does not include asset paths used by ancestral arcs
-    /// (from namespace ancestors), which may also contribute opinions
-    /// to this prim.  It also includes any asset paths that were
-    /// requested by arcs, but could not be resolved.
-	PCP_API std::vector<std::string> GetUsedAssetPaths() const;
-
-    /// Record a used asset path.
-    /// Only meant for internal use while constructing a PcpPrimIndex.
-	PCP_API void AddUsedAssetPath(const std::string& assetPath);
-	PCP_API void AddUsedAssetPaths(const std::vector<std::string>& assetPaths);
 
     /// \name Iteration
     /// @{
@@ -266,13 +256,6 @@ private:
     // List of errors local to this prim, encountered during computation.
     // NULL if no errors were found (the expected common case).
     boost::scoped_ptr<PcpErrorVector> _localErrors;
-
-    // List of asset paths directly used by this prim.  
-    // This data cannot be derived purely from the
-    // graph since it includes asset paths that failed to resolve,
-    // and consequently did not contribute any nodes to the graph.
-    // NULL if this list is empty (the expected common case).
-    boost::scoped_ptr<std::vector<std::string> > _usedAssetPaths;
 };
 
 /// Free function version for generic code and ADL.
@@ -305,6 +288,10 @@ public:
 
     /// List of all errors encountered during indexing.
     PcpErrorVector allErrors;
+
+    /// True if this prim index has a payload that we included during indexing
+    /// that wasn't previously in the cache's payload include set.
+    bool includedDiscoveredPayload = false;
     
     /// Swap content with \p r.
     inline void swap(PcpPrimIndexOutputs &r) {
@@ -316,6 +303,7 @@ public:
         spookyDependencySites.swap(r.spookyDependencySites);
         spookyDependencyNodes.swap(r.spookyDependencyNodes);
         allErrors.swap(r.allErrors);
+        std::swap(includedDiscoveredPayload, r.includedDiscoveredPayload);
     }
 };
 
@@ -329,13 +317,14 @@ inline void swap(PcpPrimIndexOutputs &l, PcpPrimIndexOutputs &r) { l.swap(r); }
 class PcpPrimIndexInputs {
 public:
     PcpPrimIndexInputs() 
-        : cache(NULL)
-        , variantFallbacks(NULL)
-        , includedPayloads(NULL)
-        , parentIndex(NULL)
+        : cache(nullptr)
+        , variantFallbacks(nullptr)
+        , includedPayloads(nullptr)
+        , includedPayloadsMutex(nullptr)
+        , parentIndex(nullptr)
+        , payloadDecorator(nullptr)
         , cull(true)
         , usd(false) 
-        , payloadDecorator(NULL)
     { }
 
     /// Returns true if prim index computations using this parameters object
@@ -363,6 +352,18 @@ public:
     PcpPrimIndexInputs& IncludedPayloads(const PayloadSet* payloadSet)
     { includedPayloads = payloadSet; return *this; }
 
+    /// Optional mutex for accessing includedPayloads.
+    PcpPrimIndexInputs &IncludedPayloadsMutex(tbb::spin_rw_mutex *mutex)
+    { includedPayloadsMutex = mutex; return *this; }
+
+    /// Optional predicate evaluated when a not-yet-included payload is
+    /// discovered while indexing.  If the predicate returns true, indexing
+    /// includes the payload and sets the includedDiscoveredPayload bit in the
+    /// outputs.
+    PcpPrimIndexInputs &IncludePayloadPredicate(
+        std::function<bool (const SdfPath &)> predicate)
+    { includePayloadPredicate = predicate; return *this; }
+    
     /// Whether subtrees that contribute no opinions should be culled
     /// from the index.
     PcpPrimIndexInputs& Cull(bool doCulling = true)
@@ -383,11 +384,13 @@ public:
     PcpCache* cache;
     const PcpVariantFallbackMap* variantFallbacks;
     const PayloadSet* includedPayloads;
+    tbb::spin_rw_mutex *includedPayloadsMutex;
+    std::function<bool (const SdfPath &)> includePayloadPredicate;
     const PcpPrimIndex *parentIndex;
-    bool cull;
-    bool usd;
     std::string targetSchema;
     PcpPayloadDecorator* payloadDecorator;
+    bool cull;
+    bool usd;
 };
 
 /// Compute an index for the given path. \p errors will contain any errors

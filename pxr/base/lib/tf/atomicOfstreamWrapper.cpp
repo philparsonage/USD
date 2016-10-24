@@ -203,7 +203,11 @@ TfAtomicOfstreamWrapper::Commit(
     mode_t fileMode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP;
     struct stat st;
     if (stat(_filePath.c_str(), &st) != -1) {
-        fileMode = st.st_mode & 0777;
+        fileMode = st.st_mode & DEFFILEMODE;
+    } else {
+        const mode_t mask = umask(0);
+        umask(mask);
+        fileMode = DEFFILEMODE - mask;
     }
 
     if (chmod(_tmpFilePath.c_str(), fileMode) != 0) {

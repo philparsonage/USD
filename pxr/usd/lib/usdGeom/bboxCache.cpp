@@ -36,6 +36,7 @@
 #include "pxr/usd/usd/treeIterator.h"
 #include "pxr/base/tracelite/trace.h"
 
+#include "pxr/base/tf/pyLock.h"
 #include "pxr/base/tf/token.h"
 
 #include <tbb/enumerable_thread_specific.h>
@@ -171,13 +172,15 @@ private:
                                         _owner, xfCaches);
         tbb::task::spawn_root_and_wait(rootTask);
 
-        // Update all of the master prims that depended on the completed
-        // master and dispatch new tasks for those whose dependencies have
-        // been resolved.
-        const _MasterTask& masterData = (*masterTasks)[master];
+        // Update all of the master prims that depended on the completed master
+        // and dispatch new tasks for those whose dependencies have been
+        // resolved.  We're guaranteed that all the entries were populated by
+        // _PopulateTasksForMaster, so we don't check the result of 'find()'.
+        const _MasterTask& masterData = masterTasks->find(master)->second;
         BOOST_FOREACH(const UsdPrim& dependentMaster, 
                       masterData.dependentMasters) {
-            _MasterTask& dependentMasterData = (*masterTasks)[dependentMaster];
+            _MasterTask& dependentMasterData =
+                masterTasks->find(dependentMaster)->second;
             if (dependentMasterData.numDependencies.fetch_and_decrement() == 1){
                 dispatcher->Run(
                     &_MasterBBoxResolver::_ExecuteTaskForMaster, 
@@ -679,7 +682,7 @@ UsdGeomBBoxCache::_ComputePurpose(const UsdPrim &prim)
 
 bool
 UsdGeomBBoxCache::_ShouldPruneChildren(const UsdPrim &prim, 
-                                   UsdGeomBBoxCache::_Entry *entry)
+                                       UsdGeomBBoxCache::_Entry *entry)
 {
    // If the entry is already complete, we don't need to try to initialize it.
     if (entry->isComplete) {
@@ -691,12 +694,10 @@ UsdGeomBBoxCache::_ShouldPruneChildren(const UsdPrim &prim,
 
         UsdAttribute extentsHintAttr 
             = UsdGeomModelAPI(prim).GetExtentsHintAttr();
-        VtValue extentsHint;
-        if (extentsHintAttr and 
-            extentsHintAttr.Get(&extentsHint, _time) and 
-            extentsHint.IsHolding<VtVec3fArray>() and
-            extentsHint.UncheckedGet<VtVec3fArray>().size() >=2) {
-                
+        VtVec3fArray extentsHint;
+        if (extentsHintAttr 
+            and extentsHintAttr.Get(&extentsHint, _time)
+            and extentsHint.size() >= 2) {
             return true;
         }
     }
@@ -773,6 +774,11 @@ UsdGeomBBoxCache::_Resolve(
     TRACE_FUNCTION();
     // NOTE: Bounds are cached in local space, but computed in world space.
 
+    // Drop the GIL here if we have it before we spawn parallel tasks, since
+    // resolving properties on prims in worker threads may invoke plugin code
+    // that needs the GIL.
+    TF_PY_ALLOW_THREADS_IN_SCOPE();
+
     // If the bound is in the cache, return it.
     std::vector<UsdPrim> masterPrims;
     _Entry* entry = _FindOrCreateEntriesForPrim(prim, &masterPrims);
@@ -824,8 +830,9 @@ UsdGeomBBoxCache::_GetBBoxFromExtentsHint(
     const UsdAttributeQuery &extentsHintQuery,
     _PurposeToBBoxMap *bboxes)
 {
-    VtValue extentsVal;
-    if (not extentsHintQuery or not extentsHintQuery.Get(&extentsVal, _time)){
+    VtVec3fArray extents;
+
+    if (not extentsHintQuery or not extentsHintQuery.Get(&extents, _time)){
         if (TfDebug::IsEnabled(USDGEOM_BBOX) and
             not geomModel.GetPrim().IsLoaded()){
             TF_DEBUG(USDGEOM_BBOX).Msg("[BBox Cache] MISSING extentsHint for "
@@ -837,16 +844,12 @@ UsdGeomBBoxCache::_GetBBoxFromExtentsHint(
         return false;
     }
 
-    if (not extentsVal.IsHolding<VtVec3fArray>())
-        return false;
-    
     TF_DEBUG(USDGEOM_BBOX).Msg("[BBox Cache] Found cached extentsHint for "
         "model %s.\n", geomModel.GetPrim().GetPath().GetString().c_str()); 
 
     const TfTokenVector &purposeTokens = 
         UsdGeomImageable::GetOrderedPurposeTokens();
 
-    const VtVec3fArray &extents = extentsVal.UncheckedGet<VtVec3fArray>();
     for(size_t i = 0; i < purposeTokens.size(); ++i) {
         size_t idx = i*2;
         // If extents are not available for the value of purpose, it 

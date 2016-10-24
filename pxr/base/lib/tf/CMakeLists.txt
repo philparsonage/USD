@@ -62,6 +62,7 @@ pxr_shared_library(tf
         pathUtils
         pointerAndBits
         poolAllocator
+        pyAnnotatedBoolResult
         pyArg
         pyCall
         pyClassMethod
@@ -179,6 +180,7 @@ pxr_shared_library(tf
         wrapStopwatch.cpp
         wrapStringUtils.cpp
         wrapTemplateString.cpp
+        wrapTestPyAnnotatedBoolResult.cpp
         wrapTestPyContainerConversions.cpp
         wrapTestPyDateTime.cpp
         wrapTestPyStaticTokens.cpp
@@ -202,6 +204,13 @@ pxr_shared_library(tf
         testenv/testTfScriptModuleLoader_Unknown.py
 )
 
+pxr_build_test(testTfPyFunction
+    LIBRARIES
+        tf
+        ${Boost_PYTHON_LIBRARY}
+    CPPFILES
+        testenv/testTfPyFunction.cpp
+) 
 
 pxr_build_test(testTfPyInterpreter
     LIBRARIES
@@ -571,6 +580,9 @@ pxr_register_test(TfWeakPtrConversion
 pxr_register_test(testTfPython
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testTfPython"
+)
+pxr_register_test(testTfPyFunction
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testTfPyFunction"
 )
 pxr_register_test(testTfPyNotice
     PYTHON
