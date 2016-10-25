@@ -580,13 +580,10 @@ SdfPath
 UsdImagingGLHdEngine::GetPrimPathFromInstanceIndex(
     SdfPath const& protoPrimPath,
     int instanceIndex,
-    int *absoluteInstanceIndex,
-    SdfPath * rprimPath,
-    SdfPathVector *instanceContext)
+    int *absoluteInstanceIndex)
 {
     return _delegate.GetPathForInstanceIndex(protoPrimPath, instanceIndex,
-                                             absoluteInstanceIndex, rprimPath,
-                                             instanceContext);
+                                             absoluteInstanceIndex);
 }
 
 /* virtual */

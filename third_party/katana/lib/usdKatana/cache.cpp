@@ -195,7 +195,7 @@ _ResolvePath(const std::string& path)
     return ArGetResolver().Resolve(path);
 }
 
-UsdStageRefPtr
+UsdStageRefPtr const
 UsdKatanaCache::GetStage(std::string const& fileName,
                          std::string const& variantSelections,
                          std::string const& ignoreLayerRegex,
@@ -244,7 +244,7 @@ UsdKatanaCache::GetStage(std::string const& fileName,
 
 }
 
-UsdStageRefPtr 
+UsdStageRefPtr const
 UsdKatanaCache::GetStage(std::string const& fileName,
                          std::set<SdfPath> const& variantSelections,
                          std::string const& ignoreLayerRegex,
@@ -256,7 +256,7 @@ UsdKatanaCache::GetStage(std::string const& fileName,
 
 // XXX, largely pasted from equivalent GetStage
 // doesn't place stageCache/context on stack
-UsdStageRefPtr
+UsdStageRefPtr const
 UsdKatanaCache::GetUncachedStage(std::string const& fileName, 
                              std::string const& variantSelections,
                              std::string const& ignoreLayerRegex,
@@ -310,7 +310,7 @@ UsdKatanaCache::GetUncachedStage(std::string const& fileName,
 }
 
     
-UsdStageRefPtr
+UsdStageRefPtr const
 UsdKatanaCache::GetUncachedStage(std::string const& fileName, 
                          std::set<SdfPath> const& variantSelections,
                          std::string const& ignoreLayerRegex,

@@ -24,6 +24,7 @@
 #ifndef HDX_DRAW_TARGET_H
 #define HDX_DRAW_TARGET_H
 
+#include "pxr/imaging/hdx/api.h"
 #include "pxr/imaging/hd/enums.h"
 #include "pxr/imaging/hd/rprimCollection.h"
 #include "pxr/imaging/hd/sprim.h"
@@ -46,7 +47,7 @@
     (enable)                                    \
     (resolution)
 
-TF_DECLARE_PUBLIC_TOKENS(HdxDrawTargetTokens, HDX_DRAW_TARGET_TOKENS);
+TF_DECLARE_PUBLIC_TOKENS(HdxDrawTargetTokens, HDXLIB_API, HDX_DRAW_TARGET_TOKENS);
 
 class HdSceneDelegate;
 class HdxDrawTargetAttachmentDescArray;

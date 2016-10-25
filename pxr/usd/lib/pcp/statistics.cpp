@@ -331,9 +331,11 @@ public:
         // This object is 120 bytes when building against libstdc++
         // and 96 for libc++ because std::set is 48 bytes in the
         // former case and 24 bytes in the latter.
+#if defined(ARCH_COMPILER_HAS_STATIC_ASSERT)
         static_assert(sizeof(PcpMapExpression::_Node) == 120 ||
                       sizeof(PcpMapExpression::_Node) == 96,
                       "PcpMapExpression::_Node must be of size 96 or 120");
+#endif // #if defined(ARCH_COMPILER_HAS_STATIC_ASSERT)
 
         static_assert(sizeof(PcpLayerStackPtr) == 16,
                       "PcpLayerStackPtr must be of size 16");
@@ -343,15 +345,18 @@ public:
         // This object is 104 bytes when building against libstdc++
         // and 88 for libc++ because std::vector<bool> is 40 bytes
         // in the former case and 24 bytes in the latter.
+#if defined(ARCH_COMPILER_HAS_STATIC_ASSERT)
         static_assert(sizeof(PcpPrimIndex_Graph) == 104 ||
                       sizeof(PcpPrimIndex_Graph) == 88,
                       "PcpPrimIndex_Graph must be of size 88 or 104");
+#endif // #if defined(ARCH_COMPILER_HAS_STATIC_ASSERT)
 
+#if defined(ARCH_COMPILER_HAS_STATIC_ASSERT)
         static_assert(sizeof(PcpPrimIndex_Graph::_Node) == 48,
                       "PcpPrimIndex_Graph::_Node must be of size 48");
         static_assert(sizeof(PcpPrimIndex_Graph::_SharedData) == 32,
                       "PcpPrimIndex_Graph::_SharedData must be of size 32");
-#endif
+#endif // #if defined(ARCH_COMPILER_HAS_STATIC_ASSERT)
     }
 
     static void PrintPrimIndexStats(

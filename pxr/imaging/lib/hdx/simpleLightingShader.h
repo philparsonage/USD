@@ -24,7 +24,7 @@
 #ifndef HDX_SIMPLE_LIGHTING_SHADER_H
 #define HDX_SIMPLE_LIGHTING_SHADER_H
 
-#include "pxr/imaging/hd/api.h"
+#include "pxr/imaging/hdx/api.h"
 #include "pxr/imaging/hd/version.h"
 #include "pxr/imaging/hd/lightingShader.h"
 #include "pxr/imaging/hd/resource.h"
@@ -51,31 +51,31 @@ typedef boost::shared_ptr<class HdxSimpleLightingShader> HdxSimpleLightingShader
 ///
 class HdxSimpleLightingShader : public HdLightingShader {
 public:
-	HDLIB_API
-    HdSimpleLightingShader();
-	HDLIB_API
-    virtual ~HdSimpleLightingShader();
+	HDXLIB_API
+    HdxSimpleLightingShader();
+	HDXLIB_API
+    virtual ~HdxSimpleLightingShader();
 
     /// HdShader overrides
-	HDLIB_API
+	HDXLIB_API
     virtual ID ComputeHash() const;
-	HDLIB_API
+	HDXLIB_API
     virtual std::string GetSource(TfToken const &shaderStageKey) const;
-	HDLIB_API
+	HDXLIB_API
     virtual void BindResources(Hd_ResourceBinder const &binder, int program);
-	HDLIB_API
+	HDXLIB_API
     virtual void UnbindResources(Hd_ResourceBinder const &binder, int program);
-	HDLIB_API
+	HDXLIB_API
     virtual void AddBindings(HdBindingRequestVector *customBindings);
 
     /// HdLightingShader overrides
-	HDLIB_API
+	HDXLIB_API
     virtual void SetCamera(GfMatrix4d const &worldToViewMatrix,
                            GfMatrix4d const &projectionMatrix);
 
-	HDLIB_API
+	HDXLIB_API
     void SetLightingStateFromOpenGL();
-	HDLIB_API
+	HDXLIB_API
     void SetLightingState(GlfSimpleLightingContextPtr const &lightingContext);
 
     GlfSimpleLightingContextRefPtr GetLightingContext() {

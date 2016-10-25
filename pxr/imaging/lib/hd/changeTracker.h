@@ -92,7 +92,9 @@ public:
 
     typedef int DirtyBits;
 
+	HDLIB_API
     HdChangeTracker();
+	HDLIB_API
     virtual ~HdChangeTracker();
 
     // ---------------------------------------------------------------------- //
@@ -284,10 +286,12 @@ public:
 
     /// Add the gived \p rprimId to the list of rprims associated with the
     /// instancer \p instancerId
+	HDLIB_API
     void InstancerRPrimInserted(SdfPath const& instancerId, SdfPath const& rprimId);
 
     /// Remove the gived \p rprimId to the list of rprims associated with the
     /// instancer \p instancerId
+	HDLIB_API
     void InstancerRPrimRemoved(SdfPath const& instancerId, SdfPath const& rprimId);
 
 
@@ -395,18 +399,23 @@ public:
     // ---------------------------------------------------------------------- //
 
     /// Start tracking sprim with the given \p id.
+	HDLIB_API
     void SprimInserted(SdfPath const& id, int initialDirtyState);
 
     /// Stop tracking sprim with the given \p id.
+	HDLIB_API
     void SprimRemoved(SdfPath const& id);
 
     /// Get the dirty bits for sprim with the given \p id.
+	HDLIB_API
     DirtyBits GetSprimDirtyBits(SdfPath const& id);
 
     /// Set the dirty flags to \p bits.
+	HDLIB_API
     void MarkSprimDirty(SdfPath const& id, DirtyBits bits);
 
     /// Set the dirty flags to \p newBits.
+	HDLIB_API
     void MarkSprimClean(SdfPath const& id, DirtyBits newBits=Clean);
 
     // ---------------------------------------------------------------------- //
@@ -485,13 +494,16 @@ public:
     // ---------------------------------------------------------------------- //
 
     /// Adds a named state for tracking.
+	HDLIB_API
     void AddState(TfToken const& name);
 
     /// Marks a named state as being dirty., this bumps the version of the
     /// state.
+	HDLIB_API
     void MarkStateDirty(TfToken const& name);
 
     /// Returns the current version of the named state.
+	HDLIB_API
     unsigned GetStateVersion(TfToken const &name) const;
 
     // ---------------------------------------------------------------------- //

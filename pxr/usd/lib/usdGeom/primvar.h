@@ -433,6 +433,7 @@ class UsdGeomPrimvar
     /// Block the indices that were previously set.  This effectively makes an
     /// indexed primvar no longer indexed.  This is useful when overriding an
     /// existing primvar.
+	USDGEOM_API
     void BlockIndices() const;
 
     /// Returns true if the primvar is indexed, i.e., if it has an associated

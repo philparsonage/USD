@@ -428,6 +428,7 @@ public:
     /// \n  Usd Type: SdfValueTypeNames->Double
     /// \n  Variability: SdfVariabilityVarying
     /// \n  Fallback Value: 0.0
+	USDGEOM_API
     UsdAttribute GetShutterOpenAttr() const;
 
     /// See GetShutterOpenAttr(), and also 
@@ -435,6 +436,7 @@ public:
     /// If specified, author \p defaultValue as the attribute's default,
     /// sparsely (when it makes sense to do so) if \p writeSparsely is \c true -
     /// the default for \p writeSparsely is \c false.
+	USDGEOM_API
     UsdAttribute CreateShutterOpenAttr(VtValue const &defaultValue = VtValue(), bool writeSparsely=false) const;
 
 public:
@@ -450,6 +452,7 @@ public:
     /// \n  Usd Type: SdfValueTypeNames->Double
     /// \n  Variability: SdfVariabilityVarying
     /// \n  Fallback Value: 0.0
+	USDGEOM_API
     UsdAttribute GetShutterCloseAttr() const;
 
     /// See GetShutterCloseAttr(), and also 
@@ -457,6 +460,7 @@ public:
     /// If specified, author \p defaultValue as the attribute's default,
     /// sparsely (when it makes sense to do so) if \p writeSparsely is \c true -
     /// the default for \p writeSparsely is \c false.
+	USDGEOM_API
     UsdAttribute CreateShutterCloseAttr(VtValue const &defaultValue = VtValue(), bool writeSparsely=false) const;
 
 public:

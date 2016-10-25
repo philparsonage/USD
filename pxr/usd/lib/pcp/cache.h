@@ -277,31 +277,6 @@ public:
     /// path for the prim with the payload.  If \p payloadPred returns true,
     /// include its payload and add it to the cache's set of included payloads
     /// upon completion.
-    template <class ChildrenPredicate, class PayloadPredicate>
-    void ComputePrimIndexesInParallel(const SdfPath &path,
-                                      PcpErrorVector *allErrors,
-                                      const ChildrenPredicate &childrenPred,
-                                      const PayloadPredicate &payloadPred) {
-        ComputePrimIndexesInParallel(SdfPathVector(1, path), allErrors,
-                                     childrenPred, payloadPred,
-                                     "Pcp", "ComputePrimIndexesInParallel");
-    }
-
-    /// \overload
-    /// XXX Do not add new callers of this method.  It is needed as a workaround
-    /// for bug #132031, which we hope to tackle soon (as of 6/2016)
-    template <class ChildrenPredicate, class PayloadPredicate>
-    void ComputePrimIndexesInParallel(const SdfPath &path,
-                                      PcpErrorVector *allErrors,
-                                      const ChildrenPredicate &childrenPred,
-                                      const PayloadPredicate &payloadPred,
-                                      const char *mallocTag1,
-                                      const char *mallocTag2) {
-        ComputePrimIndexesInParallel(SdfPathVector(1, path), allErrors,
-                                     childrenPred, payloadPred,
-                                     mallocTag1, mallocTag2);
-    }
-
     /// Vectorized form of ComputePrimIndexesInParallel().  Equivalent to
     /// invoking that method for each path in \p paths, but more efficient.
     template <class ChildrenPredicate, class PayloadPredicate>
@@ -330,6 +305,31 @@ public:
         _ComputePrimIndexesInParallel(paths, allErrors, cp, pp,
                                       mallocTag1, mallocTag2);
     }
+
+	template <class ChildrenPredicate, class PayloadPredicate>
+	void ComputePrimIndexesInParallel(const SdfPath &path,
+		PcpErrorVector *allErrors,
+		const ChildrenPredicate &childrenPred,
+		const PayloadPredicate &payloadPred) {
+		ComputePrimIndexesInParallel(SdfPathVector(1, path), allErrors,
+			childrenPred, payloadPred,
+			"Pcp", "ComputePrimIndexesInParallel");
+	}
+
+	/// \overload
+	/// XXX Do not add new callers of this method.  It is needed as a workaround
+	/// for bug #132031, which we hope to tackle soon (as of 6/2016)
+	template <class ChildrenPredicate, class PayloadPredicate>
+	void ComputePrimIndexesInParallel(const SdfPath &path,
+		PcpErrorVector *allErrors,
+		const ChildrenPredicate &childrenPred,
+		const PayloadPredicate &payloadPred,
+		const char *mallocTag1,
+		const char *mallocTag2) {
+		ComputePrimIndexesInParallel(SdfPathVector(1, path), allErrors,
+			childrenPred, payloadPred,
+			mallocTag1, mallocTag2);
+	}
 
     /// Returns a pointer to the cached computed prim index for the given
     /// path, or NULL if it has not been computed.
@@ -694,11 +694,13 @@ private:
 
     // Parallel indexing implementation.
 	PCP_API 
-    void _ComputePrimIndexesInParallel(const SdfPathVector &paths,
-                                       PcpErrorVector *allErrors,
-                                       _UntypedPredicate pred,
-                                       const char *mallocTag1,
-                                       const char *mallocTag2);
+	void _ComputePrimIndexesInParallel(
+			const SdfPathVector &paths,
+			PcpErrorVector *allErrors,
+			_UntypedIndexingChildrenPredicate childrenPred,
+			_UntypedIndexingPayloadPredicate payloadPred,
+			const char *mallocTag1,
+			const char *mallocTag2);
 
     // Helper to add a computed prim index to dependency structures.
 	PCP_API 

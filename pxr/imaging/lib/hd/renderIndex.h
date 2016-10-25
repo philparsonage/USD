@@ -98,6 +98,7 @@ public:
     void SyncAll();
 
     /// Synchronize all scene states in the render index
+	HDLIB_API
     void SyncSprims();
 
     /// Returns a vector of Rprim IDs that are bound to the given DelegateID.
@@ -253,11 +254,14 @@ public:
     void
     InsertSprim(HdSceneDelegate* delegate, SdfPath const &id);
 
+	HDLIB_API
     void RemoveSprim(SdfPath const &id);
 
+	HDLIB_API
     HdSprimSharedPtr const &GetSprim(SdfPath const &id) const;
 
     /// Returns the subtree rooted under the given path.
+	HDLIB_API
     SdfPathVector GetSprimSubtree(SdfPath const& root) const;
 
 private:
@@ -297,6 +301,7 @@ private:
                               HdTextureSharedPtr const& texture);
 
     // Inserts the scene state prim into the index and updates tracking state.
+	HDLIB_API
     void _TrackDelegateSprim(HdSceneDelegate* delegate,
                              SdfPath const& id,
                              HdSprimSharedPtr const& state,

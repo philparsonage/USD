@@ -83,7 +83,7 @@ TfPyInitialize()
 
         // Setting the program name is necessary in order for python to 
         // find the correct built-in modules. 
-		Py_SetProgramName(const_cast<char*>(programName.c_str()));
+		Py_SetProgramName(const_cast<char*>(strdup(ArchGetExecutablePath().c_str())));
 
         // We're here when this is a C++ program initializing python (i.e. this
         // is a case of "embedding" a python interpreter, as opposed to

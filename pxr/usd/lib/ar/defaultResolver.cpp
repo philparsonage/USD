@@ -101,7 +101,7 @@ Ar_DefaultResolver::AnchorRelativePath(
     // If anchorPath does not end with a '/', we assume it is specifying
     // a file, strip off the last component, and anchor the path to that
     // directory.
-    const std::string anchoredPath = TfStringCatPaths(
+    std::string anchoredPath = TfStringCatPaths(
         TfStringGetBeforeSuffix(forwardPath, '/'), path);
     anchoredPath = TfNormPath(anchoredPath);
     anchoredPath = TfAbsPath(anchoredPath);

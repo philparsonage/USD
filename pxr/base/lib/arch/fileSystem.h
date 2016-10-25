@@ -344,6 +344,13 @@ ARCH_API
 void ArchFileAdvise(FILE *file, int64_t offset, size_t count,
                     ArchFileAdvice adv);
 
+#if defined(ARCH_OS_WINDOWS)
+/// Attempts to resolve a symbolic link. \p path can be a file or directory.
+/// Returns the resolved path if successful or the original path on error.
+ARCH_API
+std::string ArchResolveSymlink(const char* path);
+#endif
+
 ///@}
 
 #endif // ARCH_FILESYSTEM_H

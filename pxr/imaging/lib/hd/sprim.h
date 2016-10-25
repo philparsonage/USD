@@ -50,7 +50,9 @@ typedef std::vector<HdSprimSharedPtr> HdSprimSharedPtrVector;
 ///
 class HdSprim {
 public:
+	HDLIB_API
     HdSprim(HdSceneDelegate* delegate, SdfPath const & id);
+	HDLIB_API
     virtual ~HdSprim();
 
     /// Returns the HdSceneDelegate which backs this state

@@ -24,6 +24,7 @@
 #ifndef USDIMAGING_BASIS_CURVES_ADAPTER_H
 #define USDIMAGING_BASIS_CURVES_ADAPTER_H
 
+#include "pxr/usdImaging/usdImaging/api.h"
 #include "pxr/usdImaging/usdImaging/primAdapter.h"
 #include "pxr/usdImaging/usdImaging/gprimAdapter.h"
 

@@ -3,11 +3,13 @@ set(PXR_PACKAGE hd)
 
 set(optionalPublicClasses "")
 
-if (OPENSUBDIV_HAS_GLSL_TRANSFORM_FEEDBACK)
-    add_definitions(-DOPENSUBDIV_HAS_GLSL_TRANSFORM_FEEDBACK)
-endif()
-if (OPENSUBDIV_HAS_GLSL_COMPUTE)
-    add_definitions(-DOPENSUBDIV_HAS_GLSL_COMPUTE)
+if (NOT WIN32)
+	if (OPENSUBDIV_HAS_GLSL_TRANSFORM_FEEDBACK)
+		add_definitions(-DOPENSUBDIV_HAS_GLSL_TRANSFORM_FEEDBACK)
+	endif()
+	if (OPENSUBDIV_HAS_GLSL_COMPUTE)
+		add_definitions(-DOPENSUBDIV_HAS_GLSL_COMPUTE)
+	endif()
 endif()
 
 pxr_shared_library(hd

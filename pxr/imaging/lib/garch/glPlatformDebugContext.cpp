@@ -210,7 +210,6 @@ GarchGLPlatformDebugContext::GarchGLPlatformDebugContext(int majorVersion,
                                                          minorVersion,
                                                          coreProfile,
                                                          directRendering));
-#endif
 }
 
 GarchGLPlatformDebugContext::~GarchGLPlatformDebugContext()
@@ -231,7 +230,6 @@ GarchGLPlatformDebugContext::makeCurrent()
     }
 
     _private->MakeCurrent();
-#endif
 }
 
 #if defined(ARCH_OS_DARWIN)

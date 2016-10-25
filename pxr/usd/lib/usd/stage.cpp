@@ -1183,8 +1183,8 @@ _ValueContainsBlock(const SdfAbstractDataValue* value)
 bool
 _ValueContainsBlock(const SdfAbstractDataConstValue* value)
 {
-    constexpr const std::type_info& valueBlockTypeId(typeid(SdfValueBlock));
-    return value and value->valueType == valueBlockTypeId;
+	static const TfType valueBlockType = TfType::Find<SdfValueBlock>();
+	return value and value->valueType == valueBlockType.GetTypeid();
 }
 
 bool 
@@ -3365,19 +3365,19 @@ UsdStage::_ComposePrimIndexesInParallel(
         _cache->ComputePrimIndexesInParallel(
             primIndexPaths, &errs, _NameChildrenPred(_instanceCache.get()),
             [](const SdfPath &) { return true; },
-            "Usd", _mallocTagID);
+            "Usd", _mallocTagID.c_str());
     }
     else if (includeRule == _IncludeNoDiscoveredPayloads) {
         _cache->ComputePrimIndexesInParallel(
             primIndexPaths, &errs, _NameChildrenPred(_instanceCache.get()),
             [](const SdfPath &) { return false; },
-            "Usd", _mallocTagID);
+            "Usd", _mallocTagID.c_str());
     }
     else if (includeRule == _IncludeNewPayloadsIfAncestorWasIncluded) {
         _cache->ComputePrimIndexesInParallel(
             primIndexPaths, &errs, _NameChildrenPred(_instanceCache.get()),
             _IncludeNewlyDiscoveredPayloadsPredicate(this),
-            "Usd", _mallocTagID);
+            "Usd", _mallocTagID.c_str());
     }
 
     if (not errs.empty()) {

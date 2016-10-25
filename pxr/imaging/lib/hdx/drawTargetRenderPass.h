@@ -24,7 +24,7 @@
 #ifndef HDX_DRAW_TARGET_RENDER_PASS_H
 #define HDX_DRAW_TARGET_RENDER_PASS_H
 
-#include "pxr/imaging/hd/api.h"
+#include "pxr/imaging/hdx/api.h"
 #include "pxr/imaging/hd/renderPass.h"
 #include "pxr/imaging/hd/rprimCollection.h"
 
@@ -46,28 +46,30 @@ class HdxDrawTargetRenderPassState;
 ///
 class HdxDrawTargetRenderPass : boost::noncopyable {
 public:
-	HDLIB_API
-    HdDrawTargetRenderPass(HdRenderIndex *index);
-	HDLIB_API
-    virtual ~HdDrawTargetRenderPass();
+	HDXLIB_API
+    HdxDrawTargetRenderPass(HdRenderIndex *index);
+	HDXLIB_API
+    virtual ~HdxDrawTargetRenderPass();
 
     /// Sets the target draw object of this render pass containing
     /// the color buffers and depth buffer to use.
-	HDLIB_API
+	HDXLIB_API
     void SetDrawTarget(const GlfDrawTargetRefPtr &drawTarget);
 
     /// Sets the non-context dependent state.  The object is expected to
     /// live longer than this class.
-	HDLIB_API
-    void SetRenderPassState(HdDrawTargetRenderPassState *renderPassState);
+	HDXLIB_API
+    void SetRenderPassState(HdxDrawTargetRenderPassState *renderPassState);
 
-	HDLIB_API
+	HDXLIB_API
     void SetRprimCollection(HdRprimCollection const& col);
 
     /// Execute render pass task
+	HDXLIB_API
     void Sync();
 
     /// Sync the render pass resources
+	HDXLIB_API
     void Execute(HdRenderPassStateSharedPtr const &renderPassState);
 
 private:

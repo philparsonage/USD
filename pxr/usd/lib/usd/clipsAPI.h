@@ -243,32 +243,40 @@ public:
     /// the assets. For instance, a value of 'foo.###.usd', 
     /// with clipTemplateStartTime=11, clipTemplateEndTime=15, and clipTemplateStride=1:
     /// USD will look for: foo.011.usd, foo.012.usd, foo.013.usd, foo.014.usd and foo.015.usd.
+	USD_API
     bool GetClipTemplateAssetPath(std::string* clipTemplateAssetPath) const;
     /// Set the clipTemplateAssetPath metadata for this prim.
     /// \sa GetClipTemplateAssetPath
+	USD_API
     bool SetClipTemplateAssetPath(const std::string& clipTemplateAssetPath);
 
     /// A double representing the increment value USD will use when
     /// searching for asset paths. For example usage \sa GetClipTemplateAssetPath.
+	USD_API
     bool GetClipTemplateStride(double* clipTemplateStride) const;
     /// Set the clipTemplateStride metadata for this prim
     /// \sa GetClipTemplateStride()
+	USD_API
     bool SetClipTemplateStride(const double clipTemplateStride);
 
     /// A double which indicates the start of the range USD will use 
     /// to search for asset paths. This value is inclusive in that range.
     /// For example usage \sa GetClipTemplateAssetPath.
+	USD_API
     bool GetClipTemplateStartTime(double* clipTemplateStartTime) const;
     /// Set the clipTemplateStartTime metadata for this prim
     /// \sa GetClipTemplateStartTime
+	USD_API
     bool SetClipTemplateStartTime(const double clipTemplateStartTime);
 
     /// A double which indicates the end of the range USD will use to
     /// to search for asset paths. This value is inclusive in that range.
     /// For example usage \sa GetClipTemplateAssetPath.
+	USD_API
     bool GetClipTemplateEndTime(double* clipTemplateEndTime) const;
     /// Set the clipTemplateEndTime metadata for this prim
     /// \sa GetClipTemplateEndTime()
+	USD_API
     bool SetClipTemplateEndTime(const double clipTemplateEndTime);
 
     /// Clear out the following metadata from the current edit target:
@@ -279,6 +287,7 @@ public:
     /// clipTemplateEndTime
     ///
     /// \sa ClearNonTemplateClipMetadata()
+	USD_API
     bool ClearTemplateClipMetadata();
 
     /// Clear out the following metadata from the current edit target:
@@ -288,6 +297,7 @@ public:
     /// clipAssetPaths
     ///
     /// \sa ClearTemplateClipMetadata()
+	USD_API
     bool ClearNonTemplateClipMetadata();
 
 };

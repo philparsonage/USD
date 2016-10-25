@@ -24,6 +24,7 @@
 #ifndef USDIMAGING_CYLINDER_ADAPTER_H
 #define USDIMAGING_CYLINDER_ADAPTER_H
 
+#include "pxr/usdImaging/usdImaging/api.h"
 #include "pxr/usdImaging/usdImaging/gprimAdapter.h"
 
 class UsdGeomCylinder;
@@ -39,8 +40,10 @@ public:
     UsdImagingCylinderAdapter()
         : UsdImagingGprimAdapter()
     {}
+	USDIMAGING_API
     virtual ~UsdImagingCylinderAdapter();
 
+	USDIMAGING_API
     virtual SdfPath Populate(UsdPrim const& prim,
                      UsdImagingIndexProxy* index,
                      UsdImagingInstancerContext const* instancerContext = NULL);
@@ -48,7 +51,7 @@ public:
     // ---------------------------------------------------------------------- //
     /// \name Parallel Setup and Resolve
     // ---------------------------------------------------------------------- //
-    
+	USDIMAGING_API
     virtual void TrackVariabilityPrep(UsdPrim const& prim,
                                       SdfPath const& cachePath,
                                       int requestedBits,
@@ -56,6 +59,7 @@ public:
                                           instancerContext = NULL);
 
     /// Thread Safe.
+	USDIMAGING_API
     virtual void TrackVariability(UsdPrim const& prim,
                                   SdfPath const& cachePath,
                                   int requestedBits,
@@ -63,6 +67,7 @@ public:
                                   UsdImagingInstancerContext const* 
                                       instancerContext = NULL);
 
+	USDIMAGING_API
     virtual void UpdateForTimePrep(UsdPrim const& prim,
                                    SdfPath const& cachePath, 
                                    UsdTimeCode time,
@@ -79,9 +84,11 @@ public:
                                UsdImagingInstancerContext const* 
                                    instancerContext = NULL);
 
+	USDIMAGING_API
     static VtValue GetMeshPoints(UsdPrim const& prim,
                                  UsdTimeCode time);
 
+	USDIMAGING_API
     static VtValue GetMeshTopology();
 };
 

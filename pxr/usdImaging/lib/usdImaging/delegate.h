@@ -335,6 +335,8 @@ public:
                                              SdfPath const &prototypeId);
 
     // Shader Support
+	USDIMAGING_API
+	virtual bool GetSurfaceShaderIsTimeVarying(SdfPath const& id);
     USDIMAGING_API
     virtual std::string GetSurfaceShaderSource(SdfPath const &id);
     USDIMAGING_API

@@ -581,3 +581,155 @@ void ArchFileAdvise(
                   POSIX_FADV_WILLNEED : POSIX_FADV_DONTNEED);
 #endif
 }
+
+#if defined(ARCH_OS_WINDOWS)
+
+static inline DWORD ArchModeToAcess(int mode)
+{
+	switch (mode)
+	{
+	case F_OK:	return FILE_GENERIC_EXECUTE;
+	case W_OK:	return FILE_GENERIC_WRITE;
+	case R_OK:	return FILE_GENERIC_READ;
+	default:	return FILE_ALL_ACCESS;
+	}
+}
+
+int ArchFileAccess(const char* path, int mode)
+{
+	SECURITY_INFORMATION securityInfo = OWNER_SECURITY_INFORMATION |
+		GROUP_SECURITY_INFORMATION |
+		DACL_SECURITY_INFORMATION;
+	bool result = false;
+	DWORD length = 0;
+
+	if (!GetFileSecurity(path, securityInfo, NULL, NULL, &length))
+	{
+		std::unique_ptr<unsigned char[]> buffer(new unsigned char[length]);
+		PSECURITY_DESCRIPTOR security = (PSECURITY_DESCRIPTOR)buffer.get();
+		if (GetFileSecurity(path, securityInfo, security, length, &length))
+		{
+			HANDLE token;
+			DWORD desiredAccess = TOKEN_IMPERSONATE | TOKEN_QUERY |
+				TOKEN_DUPLICATE | STANDARD_RIGHTS_READ;
+			if (!OpenThreadToken(GetCurrentThread(), desiredAccess, TRUE, &token))
+			{
+				if (!OpenProcessToken(GetCurrentProcess(), desiredAccess, &token))
+				{
+					CloseHandle(token);
+					return -1;
+				}
+			}
+
+			HANDLE duplicateToken;
+			if (DuplicateToken(token, SecurityImpersonation, &duplicateToken))
+			{
+				PRIVILEGE_SET privileges = { 0 };
+				DWORD grantedAccess = 0;
+				DWORD privilegesLength = sizeof(privileges);
+				BOOL accessStatus = FALSE;
+
+				GENERIC_MAPPING mapping;
+				mapping.GenericRead = FILE_GENERIC_READ;
+				mapping.GenericWrite = FILE_GENERIC_WRITE;
+				mapping.GenericExecute = FILE_GENERIC_EXECUTE;
+				mapping.GenericAll = FILE_ALL_ACCESS;
+
+				DWORD accessMask = ArchModeToAcess(mode);
+				MapGenericMask(&accessMask, &mapping);
+
+				if (AccessCheck(security,
+					duplicateToken,
+					accessMask,
+					&mapping,
+					&privileges,
+					&privilegesLength,
+					&grantedAccess,
+					&accessStatus))
+				{
+					result = (accessStatus == TRUE);
+				}
+				CloseHandle(duplicateToken);
+			}
+			CloseHandle(token);
+		}
+	}
+	return result ? 0 : -1;
+}
+
+// https://msdn.microsoft.com/en-us/library/windows/hardware/ff552012.aspx
+
+#define MAX_REPARSE_DATA_SIZE  (16 * 1024)
+
+typedef struct _REPARSE_DATA_BUFFER {
+	ULONG   ReparseTag;
+	USHORT  ReparseDataLength;
+	USHORT  Reserved;
+	union {
+		struct {
+			USHORT  SubstituteNameOffset;
+			USHORT  SubstituteNameLength;
+			USHORT  PrintNameOffset;
+			USHORT  PrintNameLength;
+			ULONG   Flags;
+			WCHAR   PathBuffer[1];
+		} SymbolicLinkReparseBuffer;
+		struct {
+			USHORT  SubstituteNameOffset;
+			USHORT  SubstituteNameLength;
+			USHORT  PrintNameOffset;
+			USHORT  PrintNameLength;
+			WCHAR   PathBuffer[1];
+		} MountPointReparseBuffer;
+		struct {
+			UCHAR  DataBuffer[1];
+		} GenericReparseBuffer;
+	};
+} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
+
+std::string ArchResolveSymlink(const char* path)
+{
+	HANDLE handle = ::CreateFile(path, GENERIC_READ, 0, NULL, OPEN_EXISTING,
+		FILE_FLAG_OPEN_REPARSE_POINT |
+		FILE_FLAG_BACKUP_SEMANTICS, NULL);
+
+	if (handle == INVALID_HANDLE_VALUE)
+		return std::string(path);
+
+	std::unique_ptr<unsigned char[]> buffer(new
+		unsigned char[MAX_REPARSE_DATA_SIZE]);
+	REPARSE_DATA_BUFFER* reparse = (REPARSE_DATA_BUFFER*)buffer.get();
+
+	if (!DeviceIoControl(handle, FSCTL_GET_REPARSE_POINT, NULL, 0, reparse,
+		MAX_REPARSE_DATA_SIZE, NULL, NULL))
+	{
+		CloseHandle(handle);
+		return std::string(path);
+	}
+	CloseHandle(handle);
+
+	if (IsReparseTagMicrosoft(reparse->ReparseTag))
+	{
+		if (reparse->ReparseTag == IO_REPARSE_TAG_SYMLINK)
+		{
+			size_t length = reparse->SymbolicLinkReparseBuffer.PrintNameLength
+				/ sizeof(WCHAR);
+			std::unique_ptr<WCHAR> reparsePath(new WCHAR[length + 1]);
+			wcsncpy_s(reparsePath.get(), length + 1,
+				&reparse->SymbolicLinkReparseBuffer.PathBuffer[
+					reparse->SymbolicLinkReparseBuffer.PrintNameOffset / sizeof(WCHAR)
+				], length);
+
+			reparsePath.get()[length] = 0;
+
+			// Convert wide-char to narrow char
+			std::wstring ws(reparsePath.get());
+			string str(ws.begin(), ws.end());
+
+			return str;
+		}
+	}
+
+	return std::string(path);
+}
+#endif

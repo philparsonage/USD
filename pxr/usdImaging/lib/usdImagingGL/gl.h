@@ -26,9 +26,8 @@
 
 #pragma once
 
+#include "pxr/usdImaging/usdImagingGL/api.h"
 #include "pxr/usdImaging/usdImagingGL/engine.h"
-#include "pxr/usdImaging/usdImaging/api.h"
-#include "pxr/usdImaging/usdImaging/engine.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -58,30 +57,30 @@ class UsdImagingGL : public UsdImagingGLEngine {
 public:
 
     /// Returns true if Hydra is enabled for GL drawing.
-    USDIMAGING_API
+    USDIMAGING_GL_API
     static bool IsEnabledHydra();
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     UsdImagingGL();
-    USDIMAGING_API
+    USDIMAGING_GL_API
     UsdImagingGL(const SdfPath& rootPath,
                  const SdfPathVector& excludedPaths,
                  const SdfPathVector& invisedPaths=SdfPathVector(),
                  const SdfPath& sharedId = SdfPath::AbsoluteRootPath(),
                  const UsdImagingGLSharedPtr& sharedImaging = UsdImagingGLSharedPtr());
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual ~UsdImagingGL();
 
     // Support for batched rendering
     // Currently, supported only when Hydra is enabled
-    USDIMAGING_API
+    USDIMAGING_GL_API
     static bool IsBatchingSupported();
 
     // Prepares the given sub-index delegates for drawing.
     // This is equivalent to calling PrepareBatch on each renderer in
     // \p renderers with the corresponding root prim, time, and parameters.
-    USDIMAGING_API
+    USDIMAGING_GL_API
     static void PrepareBatch(
         const UsdImagingGLSharedPtrVector& renderers,
         const UsdPrimVector& rootPrims,
@@ -93,13 +92,13 @@ public:
     /// This can be called many times for different sub-indexes (prim paths)
     /// over the stage, and then all rendered together with a call to
     /// RenderBatch()
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void PrepareBatch(const UsdPrim& root, RenderParams params);
 
     /// Draws all sub-indices indentified by \p paths.  Presumes that each
     /// sub-index has already been prepared for drawing by calling
     /// PrepareBatch()
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void RenderBatch(const SdfPathVector& paths, RenderParams params);
 
     /// Render everything at and beneath \p root, using the configuration in
@@ -109,54 +108,54 @@ public:
     /// root for all future calls to Render().  That is, you can call Render()
     /// again on \p root or any descendant of \p root, but not on any parent,
     /// sibling, or cousin of \p root.
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void Render(const UsdPrim& root, RenderParams params);
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void InvalidateBuffers();
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void SetCameraState(const GfMatrix4d& viewMatrix,
                                 const GfMatrix4d& projectionMatrix,
                                 const GfVec4d& viewport);
 
     /// Helper function to extract lighting state from opengl and then
     /// call SetLights.
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void SetLightingStateFromOpenGL();
 
     /// Copy lighting state from another lighting context.
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void SetLightingState(GlfSimpleLightingContextPtr const &src);
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void SetRootTransform(GfMatrix4d const& xf);
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void SetRootVisibility(bool isVisible);
 
     /// Set the paths for selection highlighting. Note that these paths may 
     /// include prefix root paths, which will be expanded internally.
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void SetSelected(SdfPathVector const& paths);
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void ClearSelected();
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void AddSelected(SdfPath const &path, int instanceIndex);
 
     /// Set the color for selection highlighting.
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual void SetSelectionColor(GfVec4f const& color);
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual SdfPath GetPrimPathFromPrimIdColor(
         GfVec4i const& primIdColor,
         GfVec4i const& instanceIdColor,
         int* instanceIndexOut = NULL);
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual SdfPath GetPrimPathFromInstanceIndex(
         const SdfPath& protoPrimPath,
         int instanceIndex,
@@ -164,16 +163,16 @@ public:
         SdfPath * rprimPath=NULL,
         SdfPathVector *instanceContext=NULL);
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual bool IsConverged() const;
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual std::vector<TfType> GetRenderGraphPlugins();
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual bool SetRenderGraphPlugin(TfType const &type);
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual bool TestIntersection(
         const GfMatrix4d &viewMatrix,
         const GfMatrix4d &projectionMatrix,
@@ -185,7 +184,7 @@ public:
         SdfPath *outHitInstancerPath = NULL,
         int *outHitInstanceIndex = NULL);
 
-    USDIMAGING_API
+    USDIMAGING_GL_API
     virtual bool TestIntersectionBatch(
         const GfMatrix4d &viewMatrix,
         const GfMatrix4d &projectionMatrix,

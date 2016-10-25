@@ -24,15 +24,15 @@
 #ifndef TF_PYANNOTATEDBOOLRESULT_H
 #define TF_PYANNOTATEDBOOLRESULT_H
 
-#include "pxr/base/tf/pyLock.h"
-#include "pxr/base/tf/pyUtils.h"
-
 #include <boost/operators.hpp>
 #include <boost/python/class.hpp>
 #include <boost/python/operators.hpp>
 #include <boost/python/return_by_value.hpp>
 
 #include <string>
+
+#include "pxr/base/tf/pyLock.h"
+#include "pxr/base/tf/pyUtils.h"
 
 template <class Annotation>
 struct TfPyAnnotatedBoolResult :

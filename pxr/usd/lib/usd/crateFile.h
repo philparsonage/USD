@@ -264,7 +264,7 @@ struct _Hasher {
 class CrateFile
 {
 public:
-    class Version;
+    struct Version;
 
 private:
     struct _Fcloser {
@@ -299,7 +299,7 @@ private:
     };
 
 public:
-    friend class ValueRep;
+    friend struct ValueRep;
     friend class TimeSamples;
 
     typedef std::pair<TfToken, VtValue> FieldValuePair;
