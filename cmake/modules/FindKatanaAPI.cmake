@@ -34,9 +34,7 @@
 if(WIN32)
     find_path(KATANA_API_BASE_DIR
         NAMES
-            katanaBin.exe
-        PATH_SUFFIXES
-            bin
+            bin/katanaBin.exe
         HINTS
             "${KATANA_API_LOCATION}"
             "$ENV{KATANA_API_LOCATION}"
